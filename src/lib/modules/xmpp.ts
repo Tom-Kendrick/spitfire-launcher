@@ -104,49 +104,54 @@ export class XMPPManager extends EventEmitter<EventMap> {
     });
   }
 
-  async connect() {
+  connect() {
     if (this.connection?.sessionStarted) return;
 
-    logger.debug('Connecting to XMPP', { accountId: this.account.accountId });
+    const lock = connectionLocks.get(this.account.accountId)!;
+    return lock.withLock(async () => {
+      if (this.connection?.sessionStarted) return;
 
-    const server = 'prod.ol.epicgames.com';
-    const resourceHash = window.crypto
-      .getRandomValues(new Uint8Array(16))
-      .reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), '')
-      .toUpperCase();
+      logger.debug('Connecting to XMPP', { accountId: this.account.accountId });
 
-    this.connection = createClient({
-      jid: `${this.account.accountId}@${server}`,
-      server,
-      transports: {
-        websocket: `wss://xmpp-service-${server}`,
-        bosh: false
-      },
-      credentials: {
-        host: server,
-        username: this.account.accountId,
-        password: this.account.accessToken
-      },
-      resource: `V2:Fortnite:WIN::${resourceHash}`
-    });
+      const server = 'prod.ol.epicgames.com';
+      const resourceHash = window.crypto
+        .getRandomValues(new Uint8Array(16))
+        .reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), '')
+        .toUpperCase();
 
-    this.connection.enableKeepAlive({ interval: 30 });
-    this.setupEvents();
-
-    return new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Connection timeout')), 15000);
-
-      this.connection!.once(ConnectionEvents.SessionStarted, () => {
-        clearTimeout(timeout);
-        resolve();
+      this.connection = createClient({
+        jid: `${this.account.accountId}@${server}`,
+        server,
+        transports: {
+          websocket: `wss://xmpp-service-${server}`,
+          bosh: false
+        },
+        credentials: {
+          host: server,
+          username: this.account.accountId,
+          password: this.account.accessToken
+        },
+        resource: `V2:Fortnite:WIN::${resourceHash}`
       });
 
-      this.connection!.once(ConnectionEvents.StreamError, (err) => {
-        clearTimeout(timeout);
-        reject(err);
-      });
+      this.connection.enableKeepAlive({ interval: 30 });
+      this.setupEvents();
 
-      this.connection!.connect();
+      return new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Connection timeout')), 15000);
+
+        this.connection!.once(ConnectionEvents.SessionStarted, () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+
+        this.connection!.once(ConnectionEvents.StreamError, (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+
+        this.connection!.connect();
+      });
     });
   }
 
