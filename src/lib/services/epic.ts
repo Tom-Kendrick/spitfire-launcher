@@ -9,8 +9,8 @@ import { isHTTPError } from 'ky';
 
 const manifest = await Manifest.getFortniteManifest().catch(() => null);
 const userAgent = manifest?.appVersionString
-  ? `Fortnite/${manifest.appVersionString} Windows/10.0.26100.1.256.64bit`
-  : 'Fortnite/++Fortnite+Release-39.50-CL-51043566-Windows Windows/10.0.26100.1.256.64bit';
+  ? `Fortnite/${manifest.appVersionString.replace('-Windows', '')} Windows/10.0.26100.1.256.64bit`
+  : 'Fortnite/++Fortnite+Release-39.50-CL-51043566 Windows/10.0.26100.1.256.64bit';
 
 export const epicService = tauriKy.extend({
   headers: {
@@ -19,7 +19,7 @@ export const epicService = tauriKy.extend({
   hooks: {
     beforeError: [
       async (error) => {
-        if (!isHTTPError(error) || !new URL(error.request.url).hostname.endsWith('epicgames.com')) return error;
+        if (!isHTTPError(error)) return error;
 
         const data = await error.response.json();
         if (!isEpicApiError(data)) return error;
