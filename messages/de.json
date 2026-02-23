@@ -58,6 +58,7 @@
     }
   },
   "sidebar": {
+    "loginRequired": "Bitte anmelden, um fortzufahren.",
     "externalLinks": {
       "discord": "Discord Server",
       "repository": "GitHub Repository"
@@ -118,7 +119,7 @@
   },
   "vbucksInformation": {
     "page": {
-      "title": "V-Bucks Informationen"
+      "title": "V-Bucks"
     },
     "getInformation": "V-Bucks abrufen",
     "loading": "V-Bucks werden geladen",
@@ -313,16 +314,34 @@
     "page": {
       "title": "STW Missionsalarme"
     },
+    "overview": {
+      "survivors": "Überlebende",
+      "upgradeLlamas": "Upgrade-Lamas",
+      "perkup": "Vorteil-Plus!"
+    },
+    "tabs": {
+      "overview": "Übersicht",
+      "all": "Alle Warnungen"
+    },
     "sections": {
       "survivors": "Legendäre/Mystische Überlebende",
-      "twinePeaks": "Twine Peaks ⚡160",
-      "ventures": "Ventures ⚡140",
+      "twinePeaks": "Twine Peaks",
+      "ventures": "Ventures",
       "upgradeLlamaTokens": "Upgrade Lama-Token",
       "perkup": "Legendäres Vorteil-Plus!"
     },
     "noMissions": "Keine Missionen verfügbar",
     "rewards": "Belohnungen",
-    "alertRewards": "Alarmbelohnungen"
+    "alertRewards": "Alarmbelohnungen",
+    "filters": {
+      "title": "Filter",
+      "zone": "Zone",
+      "missionType": "Missionstyp",
+      "group": "Gruppe",
+      "rarity": "Seltenheit",
+      "rewards": "Belohnungen",
+      "reset": "Filter Zurücksetzen"
+    }
   },
   "lookupPlayers": {
     "page": {
@@ -396,16 +415,25 @@
   },
   "partyManagement": {
     "page": {
-      "title": "Gruppenverwaltung"
+      "title": "Gruppen"
     },
     "tabs": {
       "stwActions": "STW Aktionen",
       "partyMembers": "Gruppenmitglieder"
     },
     "stwActions": {
-      "claimRewardsAfterLeaving": "Belohnungen beanspruchen",
-      "transferMaterialsAfterLeaving": "Materialien übertragen",
-      "inviteAfterLeaving": "Einladen",
+      "claimRewardsAfterLeaving": {
+        "title": "Belohnungen beanspruchen",
+        "description": "Belohnungen für das Konto beanspruchen, nachdem die Gruppe verlassen wurde."
+      },
+      "transferMaterialsAfterLeaving": {
+        "title": "Materialien übertragen",
+        "description": "Baumaterialien nach dem Verlassen der Gruppe in den Rucksack übertragen."
+      },
+      "inviteAfterLeaving": {
+        "title": "Mitglieder einladen",
+        "description": "Mitglieder nach dem Rauswerfen oder Verlassen erneut in die Gruppe einladen."
+      },
       "kickAll": "Alle Kicken",
       "leaveParty": "Gruppe Verlassen",
       "claimRewards": "Belohnungen",
@@ -448,12 +476,13 @@
   "settings": {
     "title": "Einstellungen",
     "tabs": {
-      "appSettings": "App-Einstellungen",
-      "customizableMenu": "Anpassbares Menü",
-      "downloaderSettings": "Downloader-Einstellungen"
+      "general": "Allgemein",
+      "customizableMenu": "Seitenleiste",
+      "downloader": "Downloader",
+      "advanced": "Erweitert"
     },
     "invalidValue": "Du hast einen ungültigen Wert eingegeben.",
-    "appSettings": {
+    "general": {
       "language": "Sprache",
       "gamePath": "Benutzerdefinierter Spielpfad",
       "launchArguments": {
@@ -475,9 +504,13 @@
       "discordStatus": "Discord-Status",
       "hideToTray": "In Systemleiste Ausblenden",
       "checkForUpdates": "Auf Updates Prüfen",
-      "debugLogs": "Debug-Protokolle aktivieren"
+      "debugLogs": "Debug-Protokolle aktivieren",
+      "openSettingsFolder": {
+        "title": "Einstellungsordner Öffnen",
+        "button": "Ordner Öffnen"
+      }
     },
-    "downloaderSettings": {
+    "downloader": {
       "downloadPath": {
         "title": "Download-Pfad",
         "description": "Wähle den Pfad aus, in den der Launcher Spiele herunterladen wird."
@@ -563,13 +596,13 @@
   },
   "friendsManagement": {
     "page": {
-      "title": "Freundeverwaltung"
+      "title": "Freunde"
     },
     "lists": {
       "friends": "Freunde",
       "incoming": "Eingehend",
       "outgoing": "Ausgehend",
-      "blocklist": "Blockliste"
+      "blocklist": "Gesperrt"
     },
     "failedToAdd": "Freund konnte nicht hinzugefügt oder Anfrage akzeptiert werden",
     "failedToRemove": "Freund konnte nicht entfernt oder Anfrage abgelehnt werden",

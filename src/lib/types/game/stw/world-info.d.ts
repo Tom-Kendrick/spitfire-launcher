@@ -63,20 +63,7 @@ export type WorldInfoTheater = {
   regions: Array<Region>;
 };
 
-type AvailableLocales =
-  | 'de'
-  | 'ru'
-  | 'ko'
-  | 'pt-br'
-  | 'en'
-  | 'it'
-  | 'fr'
-  | 'es'
-  | 'ar'
-  | 'ja'
-  | 'pl'
-  | 'es-419'
-  | 'tr';
+type AvailableLocales = 'de' | 'ru' | 'ko' | 'pt-br' | 'en' | 'it' | 'fr' | 'es' | 'ar' | 'ja' | 'pl' | 'es-419' | 'tr';
 
 type Region = {
   displayName: Record<AvailableLocales, string>;
@@ -108,10 +95,11 @@ type Tile = {
 };
 
 export type WorldParsedMission = {
-  filters: string[];
+  theaterId: string;
   guid: string;
   generator: string;
   tileIndex: number;
+  isGroup: boolean;
   modifiers: Array<{
     id: string;
     imageUrl: string;
@@ -124,9 +112,7 @@ export type WorldParsedMission = {
     quantity: number;
   }>;
   zone: {
-    color: string;
     iconUrl?: string;
-    letter: string;
     theme: string;
     type: {
       id?: keyof typeof ZoneCategories;
