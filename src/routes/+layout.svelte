@@ -30,9 +30,11 @@
   import { toast, Toaster } from 'svelte-sonner';
   import { on } from 'svelte/events';
   import { get } from 'svelte/store';
+  import { afterNavigate } from '$app/navigation';
 
   const { children } = $props();
 
+  let mainEl: HTMLElement;
   let hasNewVersion = $state(false);
   let newVersionData = $state<{ tag: string; downloadUrl: string }>();
 
@@ -174,6 +176,10 @@
     }
   }
 
+  afterNavigate(() => {
+    mainEl?.scrollTo({ top: 0, behavior: 'instant' });
+  });
+
   onMount(() => {
     // logger.error gives more context than unhandled console.error
     on(window, 'error', (event) => {
@@ -216,7 +222,7 @@
   });
 </script>
 
-<SidebarProvider style="--sidebar-width: 18rem;" class="flex">
+<SidebarProvider style="--sidebar-width: 18rem;" class="flex h-dvh">
   <Tooltip.Provider>
     <Toaster
       position="bottom-center"
@@ -236,13 +242,15 @@
 
     <Sidebar />
 
-    <div class="flex flex-1 flex-col">
+    <div class="flex min-h-0 flex-1 flex-col">
       <Header />
-      <div>
-        <main class="h-[calc(100dvh-4rem)] flex-1 overflow-auto bg-background px-5 py-5 xs:px-10 sm:px-20 sm:py-10">
-          {@render children()}
-        </main>
-      </div>
+
+      <main
+        bind:this={mainEl}
+        class="min-h-0 flex-1 overflow-y-auto bg-background px-5 py-5 xs:px-10 sm:px-20 sm:py-10"
+      >
+        {@render children()}
+      </main>
     </div>
   </Tooltip.Provider>
 </SidebarProvider>
