@@ -271,11 +271,11 @@
         <AlertsSection missions={filteredMissions?.survivors || []} title={$t('stwMissionAlerts.sections.survivors')} />
         <AlertsSection
           missions={filteredMissions?.twinePeaks160 || []}
-          title={$t('stwMissionAlerts.sections.twinePeaks')}
+          title="{$t('stwMissionAlerts.sections.twinePeaks')} ⚡160"
         />
         <AlertsSection
           missions={filteredMissions?.ventures140 || []}
-          title={$t('stwMissionAlerts.sections.ventures')}
+          title="{$t('stwMissionAlerts.sections.ventures')} ⚡140"
         />
         <AlertsSection
           missions={filteredMissions?.upgradeLlamaTokens || []}

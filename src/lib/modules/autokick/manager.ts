@@ -4,7 +4,7 @@ import { AutoKickBase } from '$lib/modules/autokick/base';
 import { claimRewards } from '$lib/modules/autokick/claim-rewards';
 import { transferBuildingMaterials } from '$lib/modules/autokick/transfer-building-materials';
 import { Friends } from '$lib/modules/friends';
-import { Matchmaking } from '$lib/modules/matchmaking';
+import { MCP } from '$lib/modules/mcp';
 import { Party } from '$lib/modules/party';
 import { XMPPManager } from '$lib/modules/xmpp';
 import { accountStore, settingsStore } from '$lib/storage';
@@ -14,7 +14,7 @@ import type { PartyData } from '$types/game/party';
 
 const logger = getChildLogger('AutoKickManager');
 
-type State = 'lobby' | 'pregame' | 'mission' | 'endgame';
+type State = 'lobby' | 'mission' | 'endgame';
 
 export class AutoKickManager {
   private abortController = new AbortController();
@@ -22,8 +22,8 @@ export class AutoKickManager {
   private checkerInterval?: number;
 
   private currentState: State = 'lobby';
-  private previousStarted = false;
   private lastKick?: Date;
+  private matchesPlayed?: number;
 
   private constructor(
     private account: AccountData,
@@ -51,10 +51,6 @@ export class AutoKickManager {
         const state = await manager.checkMissionState();
         manager.currentState = state;
 
-        if (state === 'pregame') {
-          manager.scheduleMissionChecker(60_000);
-        }
-
         if (state === 'mission') {
           manager.startMissionChecker();
         }
@@ -80,7 +76,6 @@ export class AutoKickManager {
       EpicEvents.MemberDisconnected,
       (data) => {
         if (data.account_id !== accountId) return;
-
         manager.resetState();
       },
       { signal }
@@ -90,7 +85,6 @@ export class AutoKickManager {
       EpicEvents.MemberExpired,
       (data) => {
         if (data.account_id !== accountId) return;
-
         manager.resetState();
       },
       { signal }
@@ -118,7 +112,7 @@ export class AutoKickManager {
       EpicEvents.PartyUpdated,
       async (data) => {
         const partyState = data.party_state_updated?.['Default:PartyState_s'];
-        if (partyState === 'PostMatchmaking') {
+        if (partyState === 'PostMatchmaking' && manager.currentState === 'lobby') {
           const delay = 60_000;
           logger.debug('PostMatchmaking detected, scheduling checker', { delay });
           manager.scheduleMissionChecker(delay);
@@ -179,8 +173,7 @@ export class AutoKickManager {
 
   resetState() {
     this.currentState = 'lobby';
-    this.previousStarted = false;
-
+    this.matchesPlayed = undefined;
     clearInterval(this.checkerInterval);
     clearTimeout(this.scheduleTimeout);
   }
@@ -192,29 +185,31 @@ export class AutoKickManager {
   }
 
   private async checkMissionState(): Promise<State> {
-    // Instead of spamming findPlayer, we could use the PackedState changes from XMPP
-    // but the event doesn't fire when playing solo
-    const response = await Matchmaking.findPlayer(this.account, this.account.accountId);
-    if (!response?.length) {
-      this.previousStarted = false;
-      return 'lobby';
+    const partyData = await Party.get(this.account);
+    const party = partyData.current[0];
+
+    const raw = party.meta['Default:CampaignInfo_j'];
+    let matchmakingState: string | undefined;
+    try {
+      matchmakingState = JSON.parse(raw)?.CampaignInfo?.matchmakingState;
+    } catch {
+      matchmakingState = undefined;
     }
 
-    const started = !!response[0]?.started;
-    let state: State;
+    if (matchmakingState === 'JoiningExistingSession') {
+      const queryProfile = await MCP.queryProfile(this.account, 'campaign');
+      const newMatchesPlayed = queryProfile.profileChanges[0].profile.stats.attributes.matches_played;
+      if (this.matchesPlayed == null) {
+        this.matchesPlayed = newMatchesPlayed;
+      } else if (newMatchesPlayed > this.matchesPlayed) {
+        this.matchesPlayed = newMatchesPlayed;
+        return 'endgame';
+      }
 
-    if (this.previousStarted && !started) {
-      state = 'endgame';
-    } else if (started) {
-      state = 'mission';
-    } else {
-      // If Auto-Kick starts while the user is in endgame, this will think it’s pregame
-      // We can ignore this for now. But might change it later
-      state = 'pregame';
+      return 'mission';
     }
 
-    this.previousStarted = started;
-    return state;
+    return 'lobby';
   }
 
   private async postMissionActions() {
@@ -302,7 +297,7 @@ export class AutoKickManager {
 
     const [partyData, friends] = await Promise.allSettled([Party.get(this.account), Friends.getFriends(this.account)]);
 
-    const party = partyData.status === 'fulfilled' ? partyData?.value.current[0] : null;
+    const party = partyData.status === 'fulfilled' ? partyData.value.current[0] : null;
     if (!party || friends.status === 'rejected' || !friends.value.length) return;
 
     const prevMemberIds = members.map((x) => x.account_id).filter((x) => x !== this.account.accountId);
