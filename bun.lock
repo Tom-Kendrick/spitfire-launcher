@@ -61,6 +61,7 @@
   },
   "patchedDependencies": {
     "svelte-sonner@1.0.7": "patches/svelte-sonner@1.0.7.patch",
+    "stanza@12.21.1": "patches/stanza@12.21.1.patch",
   },
   "packages": {
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.2", "", { "os": "aix", "cpu": "ppc64" }, "sha512-GZMB+a0mOMZs4MpDbj8RJp4cw+w1WV5NYD6xzgvzUJ5Ek2jerwfO2eADyI6ExDSUED+1X8aMbegahsJi+8mgpw=="],
