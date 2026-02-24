@@ -30,8 +30,7 @@ type ExecuteResult<T = any> = {
 };
 
 export class Legendary {
-  private static cachedApps = false;
-  private static caches: {
+  private static cache: {
     status?: LegendaryStatus;
     account?: string;
   } = {};
@@ -73,21 +72,18 @@ export class Legendary {
     const { code: exchange } = await Authentication.getExchangeCodeUsingAccessToken(accessToken);
 
     const data = await Legendary.execute<string>(['auth', '--token', exchange]);
-    Legendary.caches.account = account.accountId;
-    if (Legendary.caches.status) Legendary.caches.status.account = account.accountId;
+    Legendary.cache.account = account.accountId;
+    if (Legendary.cache.status) Legendary.cache.status.account = account.accountId;
 
-    Legendary.cachedApps = false;
     await Legendary.cacheApps();
-
     return data;
   }
 
   static async logout() {
     const data = await Legendary.execute<string>(['auth', '--delete']);
 
-    Legendary.cachedApps = false;
-    Legendary.caches.account = undefined;
-    if (Legendary.caches.status) Legendary.caches.status.account = null;
+    Legendary.cache.account = undefined;
+    if (Legendary.cache.status) Legendary.cache.status.account = null;
 
     return data;
   }
@@ -97,7 +93,7 @@ export class Legendary {
   }
 
   static async getStatus() {
-    if (Legendary.caches.status) return Legendary.caches.status;
+    if (Legendary.cache.status) return Legendary.cache.status;
 
     const { stdout } = await Legendary.execute<LegendaryStatus>(['status', '--json']);
 
@@ -105,13 +101,13 @@ export class Legendary {
       stdout.account = null;
     }
 
-    Legendary.caches.status = stdout;
+    Legendary.cache.status = stdout;
     return stdout;
   }
 
   static async getAccount() {
-    if (Legendary.caches.account) {
-      return Legendary.caches.account;
+    if (Legendary.cache.account) {
+      return Legendary.cache.account;
     }
 
     const status = await Legendary.getStatus();
@@ -180,9 +176,7 @@ export class Legendary {
     return data;
   }
 
-  static async cacheApps(forceRefresh = false) {
-    if (Legendary.cachedApps && !forceRefresh) return;
-
+  static async cacheApps() {
     const list = await Legendary.getList();
     await Legendary.syncEGL();
     const installedList = await Legendary.getInstalledList();
@@ -213,7 +207,5 @@ export class Legendary {
           };
         })
     );
-
-    Legendary.cachedApps = true;
   }
 }
