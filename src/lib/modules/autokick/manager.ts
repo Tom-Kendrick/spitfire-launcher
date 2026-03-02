@@ -101,7 +101,7 @@ export class AutoKickManager {
         // On lobby return after a kick, the game automatically creates a party and fires EpicEvents.MemberJoined
         // So, we delay the mission checker to avoid false mission detection
         if (!manager.lastKick || Date.now() - manager.lastKick.getTime() > 30_000) {
-          logger.debug('Scheduling mission checker after party join');
+          logger.debug('Joined a party');
           manager.scheduleMissionChecker(30_000);
         }
       },
@@ -114,7 +114,7 @@ export class AutoKickManager {
         const partyState = data.party_state_updated?.['Default:PartyState_s'];
         if (partyState === 'PostMatchmaking' && manager.currentState === 'lobby') {
           const delay = 60_000;
-          logger.debug('PostMatchmaking detected, scheduling checker', { delay });
+          logger.debug('PostMatchmaking detected');
           manager.scheduleMissionChecker(delay);
         }
       },
@@ -186,6 +186,10 @@ export class AutoKickManager {
 
   private async checkMissionState(): Promise<State> {
     const party = accountPartiesStore.get(this.account.accountId) || (await Party.get(this.account)).current[0];
+    if (!party) {
+      return 'lobby';
+    }
+
     const raw = party.meta['Default:CampaignInfo_j'];
     let matchmakingState: string | undefined;
     try {

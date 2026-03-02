@@ -1,9 +1,8 @@
 import { defaultClient } from '$lib/constants/clients';
-import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
+import { EpicAPIError, isEpicAPIError } from '$lib/exceptions/EpicAPIError';
 import { Manifest } from '$lib/modules/manifest';
 import { tauriKy } from '$lib/services/tauri-ky';
 import { settingsStore } from '$lib/storage';
-import type { EpicAPIErrorData } from '$types/game/authorizations';
 import { getVersion } from '@tauri-apps/api/app';
 import { arch, platform } from '@tauri-apps/plugin-os';
 import { isHTTPError } from 'ky';
@@ -33,9 +32,9 @@ export const epicService = tauriKy.extend({
         if (!isHTTPError(error)) return error;
 
         const data = await error.response.json();
-        if (!isEpicApiError(data)) return error;
+        if (!isEpicAPIError(data)) return error;
 
-        throw new EpicAPIError(data, error.request, error.response.status);
+        return new EpicAPIError(data, error.request, error.response, error.options);
       }
     ]
   }
@@ -102,7 +101,3 @@ export const spitfireService = tauriKy.extend({
     'X-User-Agent': `SpitfireLauncher/${await getVersion()} (${platform()}; ${arch()})`
   }
 });
-
-function isEpicApiError(data: any): data is EpicAPIErrorData {
-  return (data as EpicAPIErrorData)?.errorCode !== undefined;
-}

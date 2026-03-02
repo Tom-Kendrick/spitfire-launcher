@@ -105,7 +105,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
     return lock.withLock(async () => {
       if (this.connection?.sessionStarted) return;
 
-      logger.debug('Connecting to XMPP', { accountId: this.account.accountId });
+      logger.debug('Connecting', { accountId: this.account.accountId });
 
       const server = 'prod.ol.epicgames.com';
       const resourceHash = window.crypto

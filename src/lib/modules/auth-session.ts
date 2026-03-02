@@ -1,12 +1,12 @@
 import { AsyncLock } from '$lib/async-lock';
 import { defaultClient, type ClientCredentials } from '$lib/constants/clients';
-import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
+import { EpicAPIError, isEpicAPIError } from '$lib/exceptions/EpicAPIError';
 import { t } from '$lib/i18n';
 import { getChildLogger } from '$lib/logger';
 import { Authentication } from '$lib/modules/authentication';
 import { accountStore } from '$lib/storage';
 import type { AccountData } from '$types/account';
-import type { KyInstance } from 'ky';
+import ky, { isForceRetryError, type KyInstance } from 'ky';
 import { toast } from 'svelte-sonner';
 import { get } from 'svelte/store';
 
@@ -28,14 +28,14 @@ export class AuthSession {
 
   private constructor(
     private readonly account: AccountData,
-    private readonly client: ClientCredentials,
-    baseKy?: KyInstance
+    baseKy?: KyInstance,
+    private readonly client: ClientCredentials = defaultClient
   ) {
     this.kyInstance = baseKy?.extend({
       retry: {
         limit: 1,
-        shouldRetry: async ({ error }) => {
-          return this.handleError(error);
+        shouldRetry: ({ error }) => {
+          return isForceRetryError(error);
         }
       },
       hooks: {
@@ -45,10 +45,22 @@ export class AuthSession {
             request.headers.set('Authorization', `Bearer ${token}`);
           }
         ],
-        beforeRetry: [
-          async ({ request }) => {
+        afterResponse: [
+          async (request, options, response, { retryCount }) => {
+            if (response.ok || retryCount > 0) return;
+
+            const data = await response.clone().json();
+            if (!isEpicAPIError(data)) return;
+
+            const error = new EpicAPIError(data, request, response, options);
+            const shouldRetry = this.handleError(error);
+            if (!shouldRetry) return;
+
             const token = await this.getAccessToken(true);
-            request.headers.set('Authorization', `Bearer ${token}`);
+            const headers = new Headers(request.headers);
+            headers.set('Authorization', `Bearer ${token}`);
+
+            return ky.retry({ request: new Request(request, { headers }) });
           }
         ]
       }
@@ -73,11 +85,11 @@ export class AuthSession {
       clientMap.set(client.clientId, state);
     }
 
-    return new AuthSession(account, client, baseKy);
+    return new AuthSession(account, baseKy, client);
   }
 
   // Shortcut method to get a ky instance directly
-  static ky(account: AccountData, baseKy?: KyInstance, client: ClientCredentials = defaultClient) {
+  static ky(account: AccountData, baseKy?: KyInstance, client?: ClientCredentials) {
     return this.new(account, baseKy, client).ky();
   }
 
@@ -126,7 +138,10 @@ export class AuthSession {
       state.accessToken = accessTokenData.access_token;
       state.expiresAt = Date.now() + accessTokenData.expires_in * 1000;
     } catch (error) {
-      this.handleError(error);
+      if (error instanceof EpicAPIError) {
+        this.handleError(error);
+      }
+
       throw error;
     }
   }
@@ -135,9 +150,7 @@ export class AuthSession {
     return !!state.accessToken && Date.now() < state.expiresAt;
   }
 
-  private handleError(error: unknown) {
-    if (!(error instanceof EpicAPIError)) return false;
-
+  private handleError(error: EpicAPIError) {
     if (
       error.errorCode === 'errors.com.epicgames.common.authentication.token_verification_failed' ||
       error.errorCode === 'errors.com.epicgames.common.oauth.invalid_token'

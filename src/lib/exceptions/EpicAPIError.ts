@@ -1,7 +1,7 @@
 import type { EpicAPIErrorData } from '$types/game/authorizations';
-import type { KyRequest } from 'ky';
+import { HTTPError, type KyRequest, type KyResponse, type NormalizedOptions } from 'ky';
 
-export class EpicAPIError extends Error implements EpicAPIErrorData {
+export class EpicAPIError extends HTTPError implements EpicAPIErrorData {
   public errorCode: string;
   public errorMessage: string;
   public numericErrorCode: number;
@@ -11,14 +11,12 @@ export class EpicAPIError extends Error implements EpicAPIErrorData {
   public continuationUrl?: string;
   public correctiveAction?: string;
 
-  public method?: string;
-  public url?: string;
-  public httpStatus?: number;
-
-  constructor(error: EpicAPIErrorData, request?: KyRequest, status?: number) {
-    super(error.errorMessage);
+  constructor(error: EpicAPIErrorData, request: KyRequest, response: KyResponse, options: NormalizedOptions) {
+    super(response, request, options);
 
     this.name = 'EpicAPIError';
+    this.message = error.errorMessage;
+
     this.errorCode = error.errorCode;
     this.errorMessage = error.errorMessage;
     this.numericErrorCode = error.numericErrorCode;
@@ -27,9 +25,9 @@ export class EpicAPIError extends Error implements EpicAPIErrorData {
     this.continuation = error.continuation;
     this.continuationUrl = error.continuationUrl;
     this.correctiveAction = error.correctiveAction;
-
-    this.method = request?.method?.toUpperCase();
-    this.url = request?.url;
-    this.httpStatus = status;
   }
+}
+
+export function isEpicAPIError(data: any): data is EpicAPIErrorData {
+  return (data as EpicAPIErrorData)?.errorCode !== undefined || data instanceof EpicAPIError;
 }

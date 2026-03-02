@@ -66,12 +66,17 @@ export class Lookup {
     } else {
       const data = (await Lookup.searchByName(account, nameOrId))?.[0];
       if (!data)
-        throw new EpicAPIError({
-          errorCode: 'errors.com.epicgames.account.account_not_found',
-          errorMessage: `Sorry, we couldn't find an account for ${nameOrId}`,
-          messageVars: [nameOrId],
-          numericErrorCode: 18007
-        });
+        throw new EpicAPIError(
+          {
+            errorCode: 'errors.com.epicgames.account.account_not_found',
+            errorMessage: `Sorry, we couldn't find an account for ${nameOrId}`,
+            messageVars: [nameOrId],
+            numericErrorCode: 18007
+          },
+          {} as any,
+          {} as any,
+          {} as any
+        );
 
       return {
         accountId: data.accountId,

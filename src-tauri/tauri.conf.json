@@ -19,7 +19,8 @@
         "decorations": false,
         "center": true,
         "visible": false,
-        "minWidth": 320
+        "minWidth": 320,
+        "backgroundColor": "#101014"
       }
     ],
     "security": {

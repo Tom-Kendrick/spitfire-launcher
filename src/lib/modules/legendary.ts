@@ -30,10 +30,7 @@ type ExecuteResult<T = any> = {
 };
 
 export class Legendary {
-  private static cache: {
-    status?: LegendaryStatus;
-    account?: string;
-  } = {};
+  private static accountId?: string;
 
   static async execute<T>(args: string[]): Promise<ExecuteResult<T>> {
     try {
@@ -72,8 +69,7 @@ export class Legendary {
     const { code: exchange } = await Authentication.getExchangeCodeUsingAccessToken(accessToken);
 
     const data = await Legendary.execute<string>(['auth', '--token', exchange]);
-    Legendary.cache.account = account.accountId;
-    if (Legendary.cache.status) Legendary.cache.status.account = account.accountId;
+    Legendary.accountId = account.accountId;
 
     await Legendary.cacheApps();
     return data;
@@ -81,9 +77,7 @@ export class Legendary {
 
   static async logout() {
     const data = await Legendary.execute<string>(['auth', '--delete']);
-
-    Legendary.cache.account = undefined;
-    if (Legendary.cache.status) Legendary.cache.status.account = null;
+    Legendary.accountId = undefined;
 
     return data;
   }
@@ -93,34 +87,26 @@ export class Legendary {
   }
 
   static async getStatus() {
-    if (Legendary.cache.status) return Legendary.cache.status;
-
     const { stdout } = await Legendary.execute<LegendaryStatus>(['status', '--json']);
-
     if (stdout.account === '<not logged in>') {
       stdout.account = null;
     }
 
-    Legendary.cache.status = stdout;
     return stdout;
   }
 
   static async getAccount() {
-    if (Legendary.cache.account) {
-      return Legendary.cache.account;
-    }
-
-    const status = await Legendary.getStatus();
-    if (!status.account) {
-      return null;
+    if (Legendary.accountId) {
+      return Legendary.accountId;
     }
 
     try {
-      const userConfig = await path.join(status.config_directory, 'user.json');
+      const userConfig = await path.join(configPath, 'user.json');
       const file = await readTextFile(userConfig);
       const data: EpicOAuthData = JSON.parse(file);
+      if (!data.account_id) return null;
 
-      Legendary.cache.account = data.account_id;
+      Legendary.accountId = data.account_id;
       return data.account_id;
     } catch {
       return null;
