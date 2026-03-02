@@ -17,7 +17,8 @@
   import { onMount } from 'svelte';
   import { toast } from 'svelte-sonner';
 
-  let isRefreshing = $state(false);
+  // ownedApps is set in autoUpdateApps in +layout.svelte
+  const isRefreshing = $derived(!$ownedApps?.length);
   let searchQuery = $state<string>('');
   let filters = $state<AppFilterValue[]>([]);
 
@@ -67,9 +68,7 @@
   });
 
   onMount(async () => {
-    isRefreshing = true;
-
-    const isLoggedIn = (await Legendary.getStatus()).account;
+    const isLoggedIn = !!(await Legendary.getAccount());
     if (!isLoggedIn) {
       const toastId = toast.loading($t('library.loggingIn'), { duration: Number.POSITIVE_INFINITY });
 
@@ -77,15 +76,10 @@
         await Legendary.login(accountStore.getActive()!);
         toast.success($t('library.loggedIn'), { id: toastId, duration: 3000 });
       } catch (error) {
-        isRefreshing = false;
         handleError({ error, message: $t('library.failedToLogin'), toastId });
         return;
       }
     }
-
-    await Legendary.cacheApps().finally(() => {
-      isRefreshing = false;
-    });
   });
 </script>
 
@@ -93,10 +87,8 @@
   onkeydown={(event) => {
     if (event.key === 'F5') {
       event.preventDefault();
-      isRefreshing = true;
-      Legendary.cacheApps().finally(() => {
-        isRefreshing = false;
-      });
+      ownedApps.set([]);
+      Legendary.cacheApps();
     }
   }}
 />

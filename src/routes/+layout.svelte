@@ -29,7 +29,6 @@
   import { onMount } from 'svelte';
   import { toast, Toaster } from 'svelte-sonner';
   import { on } from 'svelte/events';
-  import { get } from 'svelte/store';
   import { afterNavigate } from '$app/navigation';
   import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -40,7 +39,7 @@
   let newVersionData = $state<{ tag: string; downloadUrl: string }>();
 
   async function checkForUpdates() {
-    if (!settingsStore.get().app?.checkForUpdates) return;
+    if (!$settingsStore.app?.checkForUpdates) return;
 
     const currentVersion = await getVersion();
     const latestVersion = await ky
@@ -60,11 +59,12 @@
     const account = accountStore.getActive();
     if (!account) return;
 
-    const userAccounts = accountStore.get().accounts;
+    const userAccounts = $accountStore.accounts;
     const accounts = await Lookup.fetchByIds(
       account,
       userAccounts.map((account) => account.accountId)
     );
+
     accountStore.set((current) => ({
       ...current,
       accounts: current.accounts.map((account) => ({
@@ -75,24 +75,22 @@
   }
 
   async function autoUpdateApps() {
-    const { account } = await Legendary.getStatus();
+    const account = await Legendary.getAccount();
     if (!account) return;
 
     await Legendary.cacheApps();
 
-    const settings = downloaderStore.get();
-    const updatableApps = get(ownedApps).filter((app) => app.hasUpdate);
-    const appAutoUpdate = settings.perAppAutoUpdate || {};
+    const updatableApps = $ownedApps.filter((app) => app.hasUpdate);
+    const appAutoUpdate = $downloaderStore.perAppAutoUpdate || {};
 
     let sentFirstNotification = false;
-
     for (const app of updatableApps) {
-      if (appAutoUpdate[app.id] ?? settings.autoUpdate) {
+      if (appAutoUpdate[app.id] ?? $downloaderStore.autoUpdate) {
         await DownloadManager.addToQueue(app);
 
         if (!sentFirstNotification) {
           sentFirstNotification = true;
-          toast.info(get(t)('library.app.startedUpdate', { name: app.title }));
+          toast.info($t('library.app.startedUpdate', { name: app.title }));
         }
       }
     }
@@ -133,7 +131,7 @@
       state: 'running' | 'stopped';
     }>('app_state_changed', async (event) => {
       const appId = event.payload.app_id;
-      const discordStatus = settingsStore.get().app?.discordStatus;
+      const discordStatus = $settingsStore.app?.discordStatus;
 
       if (event.payload.state === 'running') {
         runningAppIds.add(appId);
@@ -209,7 +207,7 @@
       // We could fetch all avatars using a single account
       // However, fetching per account allows invalid accounts to fail independently
       // and be detected and removed from the config.
-      accountStore.get().accounts.map((x) =>
+      $accountStore.accounts.map((x) =>
         Avatar.fetchAvatars(x, [x.accountId]).catch((error) => {
           handleError({
             error,
