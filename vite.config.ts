@@ -18,6 +18,9 @@ export default defineConfig(async () => ({
       strategy: ['baseLocale']
     })
   ],
+  build: {
+    sourcemap: true
+  },
   clearScreen: false,
   server: {
     port: 1420,
