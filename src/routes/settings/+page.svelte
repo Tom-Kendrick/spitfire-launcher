@@ -67,7 +67,7 @@
   <Tabs.Root class="flex flex-col" value="general">
     <Tabs.List>
       {#each categories as category (category.id)}
-        <Tabs.Trigger class="flex items-center justify-center gap-2" value={category.id} disabled={category.disabled}>
+        <Tabs.Trigger class="flex items-center justify-center gap-2" disabled={category.disabled} value={category.id}>
           <category.icon class="size-4 not-sm:size-5" />
           <span class="not-sm:hidden">
             {category.name}

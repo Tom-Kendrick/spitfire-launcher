@@ -1,4 +1,4 @@
-<script lang="ts" generics="T">
+<script generics="T" lang="ts">
   import type { Snippet } from 'svelte';
   import { on } from 'svelte/events';
 
@@ -132,8 +132,8 @@
 
 {#if drag && indicatorY != null && dropIndex !== drag.fromIndex && dropIndex !== drag.fromIndex + 1}
   <div
-    class="pointer-events-none fixed z-9998"
     style="top: {indicatorY}px; left: {drag.ghostLeft}px; width: {drag.ghostWidth}px; transform: translateY(-50%);"
+    class="pointer-events-none fixed z-9998"
   >
     <div class="flex items-center gap-1">
       <div class="size-1.5 rounded-full bg-primary"></div>
@@ -144,7 +144,7 @@
 
 <ul bind:this={listEl} class={className}>
   {#each items as item, index (keyFn(item))}
-    <div data-sortable-index={index} class={drag?.fromIndex === index ? 'opacity-30' : ''}>
+    <div class:opacity-50={drag?.fromIndex === index} data-sortable-index={index}>
       {@render itemSnippet({
         item,
         index,
